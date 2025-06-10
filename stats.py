@@ -289,12 +289,12 @@ class Stat(Attribute):
     
     
     def print_child_stats(self):
-        print(f'the Child Stats of {self.name} are:')
+        #print(f'the Child Stats of {self.name} are:')
         if self.child_stats == {}:
             print(f"\n{self.name} has no Child Stats\n")
-        else:
-            for name, stat in self.child_stats.items():
-                print(f'Name: {name}, Level: {stat.level}')
+        #else:
+            #for name, stat in self.child_stats.items():
+                #print(f'Name: {name}, Level: {stat.level}')
     
     # used to calculate the level of a parent stat based on 
     # the average of the levels of the childstats
@@ -308,11 +308,11 @@ class Stat(Attribute):
     def average_effective_levels(self):
         effectivelevels = []
         for name, stat in self.child_stats.items():
-            print(stat.name, stat.level, "@@@@@@@@@@@@@@@@@")
+            #print(stat.name, stat.level, "@@@@@@@@@@@@@@@@@")
             stat: Stat
             effectivelevels.append(stat.effective_level)
         #print('effective',effectivelevels)
-        print('parent stat average level:',mean(effectivelevels))
+        #print('parent stat average level:',mean(effectivelevels))
         self.effective_level = floor(mean(effectivelevels))
         #return mean(effectivelevels)
     
