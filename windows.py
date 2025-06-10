@@ -1,6 +1,8 @@
 import sys
 import os
 import pickle
+import math
+from datetime import datetime, date
 
 from PySide6 import QtCore, QtGui, QtWidgets
 from PySide6.QtWidgets import *
@@ -90,6 +92,7 @@ class MainWindow(QMainWindow):
         pass
 
     def save(self):
+
         pass
     def load(self):
         with open(self.load_character_path, 'rb') as file:
@@ -287,8 +290,9 @@ class Character_screen(QMainWindow):
         self.tool_bar.addAction(self.skill_screen_button)
 
         self.file_menu = QMenu(self)
-        action = QAction("Save", self)
-        self.file_menu.addAction(action)
+        save_action = QAction("Save", self)
+        self.file_menu.addAction(save_action) ###############################
+        save_action.triggered.connect(self.save)
         self.menu_action = self.tool_bar.addWidget(self.file_menu)
 
         self.tool_bar.addAction(self.menu_action)
@@ -302,6 +306,18 @@ class Character_screen(QMainWindow):
         self.central_widget.setLayout(self.central_widget_layout)
         self.setCentralWidget(self.central_widget)
         self.stat_screen()
+    
+    def save(self):
+        name = self.character.name
+        date_time = datetime.now()
+        time_stamp = f"{date_time.year}_{date_time.month}_{date_time.day}_{date_time.hour}_{date_time.minute}_{date_time.second}"
+        filename = f"{name}_{time_stamp}.dat"
+        cur_path = os.path.dirname(__file__)
+        file_path = f'characters/{filename}'
+        abs_file_path = os.path.join(cur_path, file_path)
+        with open(abs_file_path, 'wb') as File:
+            pickle.dump(self.character, File)
+
 
     def stat_screen(self):
         self.skill_screen_button.setChecked(False)
@@ -543,6 +559,13 @@ class Skill_Screen(QFrame):
                                     font: 18pt;
                                     color: white
                                     }
+                        QPushbutton#add_skill_button { padding: 0px; 
+                                    margin: 0px; 
+                                    border: 2px solid black; 
+                                    background-color: #0e2841;
+                                    font: 18pt;
+                                    color: white
+                                    }
 """
         self.setStyleSheet(self.stylesheet)
 
@@ -563,6 +586,14 @@ class Skill_Screen(QFrame):
         self.skill_level.setStyleSheet("QLabel { border: 2px solid black; padding 5px}")
         self.skill_level.setFixedHeight(30)
 
+        self.add_skill_button = QPushButton('Add Skill')
+        self.add_skill_button.setObjectName("add_skill_button")
+        self.add_skill_button.pressed.connect(self.add_skill)
+        #self.add_skill_button.setStyleSheet("QPushButton#'add_skill_button' { border: 2px solid black; padding 5px}")
+
+        self.remove_skill_button = QPushButton("Remove Skill")
+    
+
         #Row2
         self.scrollarea = QScrollArea()
         self.scrollarea.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
@@ -580,11 +611,237 @@ class Skill_Screen(QFrame):
 
         self.skill_window_layout.addWidget(self.skill_name,0,0)
         self.skill_window_layout.addWidget(self.skill_level,0,1)
+        self.skill_window_layout.addWidget(self.add_skill_button, 0,2)
+        self.skill_window_layout.addWidget(self.remove_skill_button,0,3)
 
         #Row2
-        self.skill_window_layout.addWidget(self.scrollarea,1,0,1,2)
+        self.skill_window_layout.addWidget(self.scrollarea,1,0,1,4)
 
         # Within the skill list
+        self.add_skill_window = None
+    
+    def add_skill(self):
+        if self.add_skill_window == None:
+            self.add_skill_window = None
+            self.add_skill_window = Add_Skill_Menu(self)
+            self.add_skill_window.show()
+        #elif self.add_skill_window.isHidden():
+            #self.add_skill_window.show()
+
+        pass
+
+class Add_Skill_Menu(QMainWindow):
+    def __init__(self, parent):
+        super().__init__(parent)
+
+        
+        self.parent: Skill_Screen = parent
+        self.character: Character
+        self.character = self.parent.character
+        self.main_widget = QWidget()
+        self.setCentralWidget(self.main_widget)
+        layout = QGridLayout()
+        self.main_widget.setLayout(layout)
+
+        self.name_box = QLineEdit(placeholderText="Skill Name")
+        self.discription = QTextEdit(placeholderText="Discription")
+        self.stat_name_frame = QFrame(self)
+        self.stat_name_frame_layout = QGridLayout()
+        self.stat_name_frame.setLayout(self.stat_name_frame_layout)
+        self.stat_name_frame.setStyleSheet("QFrame { border: 2px solid black}")
+        self.skill_attributes = {}
+        self.stat_button_list = {}
+        max_rows_columns = 1
+        stat_row = 1
+        stat_column = 0
+        frame_label = QLabel("Stats effected by skill")
+        frame_label.setAlignment(Qt.AlignCenter)
+
+        
+        i = 1
+        for stat in self.character.dict_of_stats.values():
+            stat: Stat
+            if stat.name != "Skills Level" and not stat.isparent:
+                print(i, stat)
+                i+= 1
+                stat_button = QCheckBox(stat.name)
+                self.stat_button_list[stat.name]=stat_button
+                stat_button.checkStateChanged.connect(lambda checked, stat=stat : self.checkbox_signaled(signal=checked, stat=stat))
+                self.skill_attributes[stat.name] = [False, stat]
+
+
+        max_rows_columns = math.ceil(math.sqrt(len(self.stat_button_list)))
+        for button in self.stat_button_list.values():
+            if stat_column < max_rows_columns -1:
+                self.stat_name_frame_layout.addWidget(button, 
+                                                      stat_row, 
+                                                      stat_column)
+                stat_column += 1
+            else:
+                stat_row += 1
+                stat_column = 0
+                self.stat_name_frame_layout.addWidget(button, 
+                                                      stat_row, 
+                                                      stat_column)
+                stat_column += 1
+            
+        self.stat_name_frame_layout.addWidget(frame_label, 0,0,1,3)
+
+        self.stat_increase_multiplier = QDoubleSpinBox()
+        self.stat_increase_multiplier.setDecimals(5)
+        self.stat_increase_multiplier.setMaximum(.9999999999)
+        self.stat_increase_multiplier.setMinimum(0)
+        self.stat_increase_multiplier.setSpecialValueText("Stat Multiplier")
+        self.stat_increase_multiplier.setValue(0)
+        self.stat_increase_multiplier.setSingleStep(0.0001)
+        
+        self.affects_mana_capacity_check = QCheckBox("Affect Mana", self)
+        #self.affects_mana_capacity_check.checkStateChanged.connect(lambda checked: self.checkbox_signaled(signal=checked, name= "mana_capacity_flag" ))
+        self.affects_mana_capacity_check.checkStateChanged.connect(lambda checked: self.mana_capacity_flag(signal=checked))
+
+        self.mana_capacity_multiplier = QDoubleSpinBox()
+        self.mana_capacity_multiplier.setSpecialValueText("Mana Capacity Multi")
+        self.mana_capacity_multiplier.setDecimals(5)
+        self.mana_capacity_multiplier.setDisabled(True)
+        self.mana_capacity_multiplier.setMinimum(0)
+        self.mana_capacity_multiplier.setValue(0)
+        self.mana_capacity_multiplier.setSingleStep(0.0001)
+
+        #self.skill
+
+        self.made_skill = None
+
+        self.cancel_button = QPushButton("Cancel")
+        self.cancel_button.clicked.connect(self.cancel_trigger)
+        self.create_skill_button = QPushButton("Create Skill")
+        self.create_skill_button.clicked.connect(self.make_skill)
+
+        self.basics = QCheckBox("Basics", self)
+        
+
+
+        self.create_skill_dialog = QMessageBox(self)
+
+
+        #self.skills_effected = QRadioButton(self.parent.character.name)
+
+        layout.addWidget(self.name_box,0,0)
+        layout.addWidget(self.discription,1,0)
+        layout.addWidget(self.stat_name_frame,0,1,2,3)
+        layout.addWidget(self.stat_increase_multiplier,2,0)
+        layout.addWidget(self.affects_mana_capacity_check,2,1)
+        layout.addWidget(self.mana_capacity_multiplier, 2,2)
+        layout.addWidget(self.basics, 2, 3)
+        layout.addWidget(self.cancel_button, 3,0)
+        layout.addWidget(self.create_skill_button, 3,2)
+        #layout.addWidget(self.skills_effected,2,0)
+
+    def cancel_trigger(self):
+        self.close()
+        self.parent.add_skill_window = None
+    
+    def mana_capacity_flag(self, signal):
+        if signal == Qt.Unchecked:
+            self.mana_capacity_multiplier.setDisabled(True)
+        else:
+            self.mana_capacity_multiplier.setEnabled(True)
+    
+    def make_skill(self):
+        temp_skill = {}
+        #print(self.skill_attributes.values())
+        temp_skill['name'] = self.name_box.text()
+        temp_skill['discription'] = self.discription.toPlainText()
+        temp_skill['stat_multiplier'] = round(self.stat_increase_multiplier.value(),5)
+        mana_multiplication = self.mana_capacity_multiplier.value() + 1
+        stat_list = []
+        for stat in self.skill_attributes.values():
+            if stat[0] is True:
+                stat_list.append(stat[1])
+
+
+        if self.affects_mana_capacity_check.isChecked():
+            temp_skill['mana_capacity_flag'] = True
+        else:
+            temp_skill['mana_capacity_flag'] = False
+        if self.basics.isChecked():
+            temp_skill['basics'] = True
+        else:
+            temp_skill['basics'] = False
+        
+        self.made_skill = Skill(name=self.name_box.text(),
+                                discription=self.discription,
+                                mana_multiplier=mana_multiplication,
+                                mana_capacity_flag=temp_skill['mana_capacity_flag'],
+                                tagged_stats=stat_list, 
+                                stat_increase_multiplier= round(self.stat_increase_multiplier.value(),5),
+                                ) 
+        if temp_skill['basics']:
+            self.made_skill.basics = temp_skill['basics']
+        
+        self.character.add_skill(self.made_skill)
+        self.add_skill_to_skill_list_window(self.made_skill)
+        self.parent.list_of_skills.update()
+        #print(self.character.skills_level.dict_of_skills)
+        print(self.parent.character.skills_level.dict_of_skills)###########################################
+        print(self.parent.list_of_skills.row)
+
+
+    def add_skill_to_skill_list_window(self, skill):
+        skill_list: Skills_list = self.parent.list_of_skills
+        skill_list.skill_row = {}
+        button_height = 70
+        skill_list.skill_row['skill'] = skill
+        skill_name_button = QPushButton(skill.name)
+        skill_list.skill_row['name'] = skill_name_button
+
+        skill_level_button = QPushButton(str(skill.level))
+        skill_list.skill_row['level'] = skill_level_button
+
+        skill_basics_button = QPushButton(str(skill.basics))
+        skill_list.skill_row['basics'] = skill_basics_button
+
+        skill_mastery_button = QPushButton(skill.mastery.name)
+        skill_list.skill_row['mastery'] = skill_mastery_button
+
+        skill_tagged_stats = QPushButton("tagged\nskills")
+        skill_list.skill_row['tagged stats'] = skill_tagged_stats
+
+        skill_multipliable = QPushButton(str(round(skill.stat_multiplier,4)))
+        skill_list.skill_row['multiplier'] = skill_multipliable
+            
+        skill_name_button.setFixedHeight(button_height)
+        skill_level_button.setFixedHeight(button_height)
+        skill_basics_button.setFixedHeight(button_height)
+        skill_mastery_button.setFixedHeight(button_height)
+        skill_tagged_stats.setFixedHeight(button_height)
+        skill_multipliable.setFixedHeight(button_height)
+        skill_list.skill_information_window = SkillInformation(skill_list, character=self.character, skill= skill)
+        skill_list.skill_buttons[skill.name] = skill_list.skill_row
+        skill_list.skill_info_window[skill.name] = skill_list.skill_information_window
+        
+        #the action of the buttons
+        skill_level_button.clicked.connect(skill_list.skill_information_window.show)
+
+
+        skill_list._layout.addWidget(skill_name_button,skill_list.row, 0 )
+        skill_list._layout.addWidget(skill_level_button, skill_list.row, 1)
+        skill_list._layout.addWidget(skill_basics_button, skill_list.row, 2)
+        skill_list._layout.addWidget(skill_mastery_button, skill_list.row, 3)
+        skill_list._layout.addWidget(skill_tagged_stats, skill_list.row, 4)
+        skill_list._layout.addWidget(skill_multipliable ,skill_list.row, 5)
+
+
+
+        skill_list.row += 1
+    
+    
+    def checkbox_signaled(self, signal, stat):
+        if signal == Qt.Unchecked:
+            print(signal)
+            self.skill_attributes[stat] = [False, stat]
+        else:
+            self.skill_attributes[stat] = [True, stat]
+            print(signal)
 
 class Skills_list(QWidget):
     def __init__(self, character: Character, parent : Skill_Screen):
@@ -702,6 +959,11 @@ class Skills_list(QWidget):
     #def update_frames(self, skill):
         #working_skill = self.skill_buttons[skill.name] 
         #working_skill : 
+    
+    def update_all_frames(self):
+        self._parent._parent.mana.update_frames()
+        for skill in self.skill_buttons:
+            print(skill.text())
         
 
 
@@ -796,6 +1058,7 @@ class SkillInformation(QMainWindow):
         self.character.increase_stat_or_skill_level(stat=self._skill)
         self.update_window_information()
         self._parent.update_frames(skill = self._parent.skill_buttons[self._skill.name])
+        self._parent._parent._parent.force_update()
         #########self._parent._parent._parent
         #print(self._skill.name)
         #print(self._parent.skill_buttons[self._skill.name]['skill'])
@@ -912,7 +1175,7 @@ class MainStatFrame(QLabel):
                 if self.parent_stat:
                     self.parent_stat : MainStatFrame
                     self.parent_stat.update_frames()
-                print(self.stat.name, self.stat.level, self.stat.effective_level, sep=' | ')
+                #print(self.stat.name, self.stat.level, self.stat.effective_level, sep=' | ')
             
 
     def print_conf_name(self):
@@ -962,6 +1225,9 @@ class StatIncreaseWindow(QMainWindow):
         self.mana_increase_button.clicked.connect(self.increase_conmana)
         self.mana_increase_button.pressed.connect(self.increase_conmana)
 
+        self.decrease_level_button = QPushButton("Decrease Level")
+        self.decrease_level_button.clicked.connect(self.decrease_level)
+        
         self.print_stats_button = QPushButton("Print Stats")
         self.print_stats_button.clicked.connect(self.print_stats)
 
@@ -972,8 +1238,10 @@ class StatIncreaseWindow(QMainWindow):
         self.central_layout.addWidget(self.power_label, 4, 0)
         self.central_layout.addWidget(self.increase_level_button,5,0)
         self.central_layout.addWidget(self.mana_increase_button,6,0)
-        self.central_layout.addWidget(self.print_stats_button,7,0)
+        self.central_layout.addWidget(self.decrease_level_button,7,0)
+        self.central_layout.addWidget(self.print_stats_button,8,0)
     
+
     def print_stats(self):
         print(self.character)
 
@@ -997,22 +1265,28 @@ class StatIncreaseWindow(QMainWindow):
         self.usable_mana.setValue(self.character.condensed_mana.level)
         self._parent._parent.condensed_mana.update_frames()
 
+    def decrease_level(self):
+        self.character.decrease_stat_level(self.stat)
+        if self.stat.parent_stat:
+            self.stat.parent_stat.average_effective_levels()
+            self._parent.parent_stat.update_frames()
+        print(self.stat.level)
+        self.update_screens()
+        #self._parent.update_frames()
+        self._parent.update_frames()
+        self._parent._parent.condensed_mana.update_frames()
+        self._parent._parent.level.update_frames()
     
     def increase_level(self):
         if self.character.condensed_mana.level >= self.stat.mana_to_next_level:
             self.character.increase_stat_or_skill_level(self.stat)
-            self.stat.parent_stat.average_effective_levels()
+            if self.stat.parent_stat:
+                self.stat.parent_stat.average_effective_levels()
+                self._parent.parent_stat.update_frames()
             self.update_screens()
-            self._parent.parent_stat.update_frames()
             self._parent.update_frames()
             self._parent._parent.condensed_mana.update_frames()
             self._parent._parent.level.update_frames()
-
-
-
-
-
-    pass
 
 def main():
     app = QApplication()
