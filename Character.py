@@ -350,11 +350,9 @@ class Character():
     
     def kills_character(self, killed):
         if isinstance(killed, Character):
-            dict_of_the_killed ={
-                                "name": killed.name,
-                                "race": killed.race,
-                                "level": killed.level.level,
-            }
+            mana_added = killed.level.level * 1.0001**self.energy_potential.level
+            self._dict_of_kills[f"{killed.name}: lvl. {killed.level}"] = (killed, mana_added)
+            self.add_condensed_mana(mana_added)
     
     def add_skill_to_mana_calc(self, *args):
         for skill in args:
@@ -459,7 +457,7 @@ class Character():
 ### Need to edit the way that a stat level is increased and decreased as it is confusing and prone to mistakes due to calculating the level first
     #this function checks if the stat is a Stat or Skill then calls a function to increas the stat level
     def increase_stat_or_skill_level(self, stat, level=1):
-        print(stat.name,  "############")
+        #print(stat.name,  "############")
         quit_flag = False
         if not isinstance(stat, Stat) and not isinstance(stat, Skill):
             print( "Type Error: selected stat is not a type <Stat> or <Skill>.")
@@ -472,9 +470,7 @@ class Character():
             return False
         else:
             if stat.name in self.dict_of_stats:
-                #print(f'{stat.name} in self.dict_of_stats and is not a parent')
                 if not stat.isparent:
-                    print("Stat:", stat.name)
                     self.increase_stat_level(stat=stat, level=level)
                 else:
                     self.increase_stat_level(stat=stat, level=level)
@@ -483,82 +479,49 @@ class Character():
                 self.increase_skill_level(skill=stat, level = level)
             self.calculate_max_mana()
             self.calculate_effective_stat_level()
-            for stats in self.dict_of_stats.values():
-                stats : Stat
-                #if isinstance(stats, Stat):
-                #    print(stats.name, stats.level, stats.effective_level, sep=' | ')
+            #for stats in self.dict_of_stats.values():
+                #stats : Stat
     
     def check_if_con_mana_more_than_stat(self,skill_stat: Skill | Stat):
         returnstat =  self.condensed_mana.level > skill_stat.mana_to_next_level
         return returnstat
     
     def increase_skill_level(self, skill: Skill, level=1):
-        #print("in INcrease_Skill_Level")
         for _ in range(level):
-            #print(f'\n{skill.name} {id(skill)} Level: {skill.level}\n total_mana: {self.condensed_mana.level}\n mana_requirement: {skill.mana_to_next_level}\n actual_mana_requirement: {skill.actual_mana_to_next_level}')
             if self.check_if_con_mana_more_than_stat(skill_stat=skill):
                 self.use_condensed_mana(skill.mana_to_next_level)
                 skill.total_mana_used += skill.mana_to_next_level
                 self.increase_next_level_requirement(stat=skill, level=1)
                 skill.level +=1
                 skill.calculate_stat_multiplier()
-                #self.calculate_effective_stat_level()
-                #print(skill, skill.level)
-        #print(f'\n{skill.name} {id(skill)} Level: {skill.level}\n total_mana: {self.condensed_mana.level}\n mana_requirement: {skill.mana_to_next_level}\n actual_mana_requirement: {skill.actual_mana_to_next_level}')
-        #print(skill)
+                
         self.skills_level.calculate_level()    
         self.calculate_character_level()
     
-    #def calculate_effective_stat_level(self, statorskill: Stat|Skill):
-        #if isinstance(statorskill, Stat):
-            #statorskill.effective_level = math.floor()
-            #for skill in statorskill.skills_effecting_stats.values():
-                #pass
-        #elif isinstance(statorskill, Skill):
-            #pass
 
     def increase_stat_level(self, stat=  Stat, level=1):
         for _ in range(level):
             stat : Stat
-            print(stat.name, "&*^)(*^)*&^")
-            #print(f'\n{stat.name} Level: {stat.level}\n total_mana: {self.condensed_mana.level}\n mana_requirement: {stat.mana_to_next_level}\n actual_mana_requirement: {stat.actual_mana_to_next_level}')
             if self.check_if_con_mana_more_than_stat(skill_stat=stat,):
                 self.use_condensed_mana(stat.mana_to_next_level)
                 self.increase_next_level_requirement(stat=stat, level = 1)
                 stat.level += 1
-                if stat.isparent:
-                    print("stat", stat.name, 'is a parent')
-        #print(f'\n{stat.name} Level: {stat.level}\n total_mana: {self.condensed_mana.level}\n mana_requirement: {stat.mana_to_next_level}\n actual_mana_requirement: {stat.actual_mana_to_next_level}')
-        #self.calculate_effective_stat_level(stat)
         self.calculate_character_level()
+    
+    def decrease_stat_level(self, stat=  Stat, level=1):
+        for _ in range(level):
+            stat : Stat
+            self.add_condensed_mana(stat.mana_to_next_level-1)
+            self.decrease_next_level_requirement(stat=stat, level = 1)
+            stat.level -= 1
+        self.calculate_character_level()
+        self.calculate_max_mana()
+        self.calculate_effective_stat_level()
 
     def increase_next_level_requirement(self, stat: Stat | Skill, level=1):
         next_actual_level_requirement = stat.actual_mana_to_next_level * (self.mana_requirement_increaser ** level)
         stat.actual_mana_to_next_level = next_actual_level_requirement
 
-a = Character("BB")
-print(a.regeneration.effective_level)
-#a.add_condensed_mana(500)
-#a.increase_stat_or_skill_level(a.physical_strength,8)
-##print(a.physical_strength.level)
-#a.add_skill(Skill("attack", tagged_stats=[a.physical_strength, 
-#                                          a.physical_resistance, a.physical_resistance],
-#                                          stat_increase_multiplier=0.003))
-#print('___',a.dict_of_skills['attack'], f'physical: {a.physical_strength.effective_level}','___', sep='\n')
-#a.increase_stat_or_skill_level(a.dict_of_skills['attack'],25)
-#print(a.dict_of_skills['attack'])
-#
-#print('____________________',
-#      a.physical_strength.name, 
-#      a.physical_strength.level,
-#      a.physical_strength.effective_level, 
-#      sep='\n')
-#a.increase_stat_or_skill_level(a.physical_strength,12)
-#print('____________________',
-#      a.physical_strength.name, 
-#      a.physical_strength.level,
-#      a.physical_strength.effective_level, 
-#      sep='\n')
-##a.add_skill(Skill("power", tagged_stats=[a.physical_strength, 
-##                                          a.physical_resistance, a.physical_resistance],
-#                                          stat_increase_multiplier=0.003))
+    def decrease_next_level_requirement(self, stat: Stat | Skill, level=1):
+        previous_actual_level_requirement = stat.actual_mana_to_next_level * (self.mana_requirement_increaser ** (level-1))
+        stat.actual_mana_to_next_level = previous_actual_level_requirement
