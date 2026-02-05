@@ -11,14 +11,14 @@ class Attribute():
                  mana_multiplier =1,
                  mana_capacity_flag = False,
                  level =0):
-        self._name = name
+        self.name = name
         self._level = level
         
-        self._mana_to_next_level = 1
+        self.mana_to_next_level = 1
         self._actual_mana_to_next_level =1
-        self._total_mana_used = 0
+        self.total_mana_used = 0
         
-        self._discription = discription
+        self.discription = discription
 
         self._power = 1
         
@@ -35,16 +35,6 @@ class Attribute():
         line3 = self.discription
         return "\n".join([line1, line2, line3])
     
-    
-    #getter and setter functions of _name
-    @property
-    def name(self):
-        return self._name
-    
-    @name.setter
-    def name(self, name):
-        self._name = name
-    
     #getter and setter function of _level
     @property
     def level(self):
@@ -53,34 +43,17 @@ class Attribute():
     @level.setter
     def level(self, level):
         self._level = level
-        #self.power = 1 *(1.01 ** self.level)
         self.calculate_capacity_multiplier()
-   
-    #getter and setter functions of _mana_to_next_level
-    @property
-    def mana_to_next_level(self):
-        return self._mana_to_next_level
-    
-    @mana_to_next_level.setter
-    def mana_to_next_level(self, mana):
-        self._mana_to_next_level = mana
     
     @property
     def actual_mana_to_next_level(self):
         return self._actual_mana_to_next_level
+
     @actual_mana_to_next_level.setter
     def actual_mana_to_next_level(self, value):
         self.mana_to_next_level = ceil(value)
         self._actual_mana_to_next_level = value 
 
-    #getter and setter functions of _total_mana_used
-    @property
-    def total_mana_used(self):
-        return self._total_mana_used
-   
-    @total_mana_used.setter
-    def total_mana_used(self, mana):
-        self._total_mana_used = mana
     
     #getter and setter funcitons of _power
     
@@ -92,14 +65,6 @@ class Attribute():
     def power(self, power):
         self._power = power
     
-    #getter and setter of the discription
-    @property
-    def discription(self):
-        return self._discription
-    
-    @discription.setter
-    def discription(self, discription):
-        self._discription = discription
 
     #gets the number of diffrent attributes
     @property
@@ -126,7 +91,9 @@ class Attribute():
         #need an initial value based on the type of skill
         # will be multiplied by level
         if self.affects_mana_capacity:
-            self.mana_capasity_multiplier= round(self.original_mana_multiplier * 1.01 ** self.level,4)
+            self.mana_capasity_multiplier= round(
+                self.original_mana_multiplier * 1.01 ** self.level,
+                4)
 
 class MajorStat(Attribute):
     def __init__(self, name='', discription='', mana_multiplier= 1, mana_capacity_flag=False):
@@ -171,7 +138,7 @@ class CondensedMana(MajorStat):
         self._power = value
     
     def __str__(self):
-        return_string = f"Con Mana: {self.level:,}"
+        return_string = f"Con Mana: {self.level}"
         return return_string
 
 class Stat(Attribute):
@@ -192,18 +159,12 @@ class Stat(Attribute):
         self._is_taggable = is_taggable
 
         self._isparent = isparent
-        self._child_stats = {}
+        self.child_stats = {}
         self._parent_stat = None
-        self._power = 1
+        self.power = 1
         self._affects_character_level = affects_character_level
-        self._effective_level = 0
+        self.effective_level = 0
         self._skills_effecting_stat ={}
-    @property
-    def effective_level(self):
-        return self._effective_level
-    @effective_level.setter
-    def effective_level(self, level):
-        self._effective_level = level 
     
     @property
     def skills_effecting_stats(self):
@@ -231,9 +192,6 @@ class Stat(Attribute):
         else:
               print(f'ERROR: {self.name}.isparent Must be type <bool>')
     
-    @property
-    def child_stats(self):
-        return self._child_stats
     
     @property
     def parent_stat(self):
@@ -247,20 +205,10 @@ class Stat(Attribute):
             print("ERROR parent stat needs to be class <Stat>")
 
     
-    @property
-    def power(self):
-        return self._power
-    @power.setter
-    def power(self, power):
-        self._power = round(1.01 ** self.level, 2)
 
     @property
     def level(self):
-        if self.isparent:
-            #self._level = floor(self.average_values())
-            return self._level
-        else:
-            return self._level
+        return self._level
     
     @ level.setter
     def level(self, level=None):

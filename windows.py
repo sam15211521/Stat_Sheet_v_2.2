@@ -15,7 +15,7 @@ from Character import Character
 
 
 class MainWindow(QMainWindow):
-    def __init__(self, character_sheet: dict):
+    def __init__(self): #, character_sheet: dict):
         super().__init__()
         self.setMaximumSize(500, 400)
 
@@ -269,12 +269,15 @@ class Character_screen(QMainWindow):
         self.central_widget_layout = QStackedLayout()
         self.character = character
         self.skill_window_layout = QGridLayout()
+        self.combat_window_layout = QGridLayout()
 
         self.stat_window = QFrame()
         self.skill_window = Skill_Screen(parent=self, character=self.character)
+        self.combat_window = Combat_Screen()
 
         self.central_widget_layout.addWidget(self.stat_window)
         self.central_widget_layout.addWidget(self.skill_window)
+        self.central_widget_layout.addWidget(self.combat_window)
 
         self.stat_screen_button = QAction("Stats", self)
         self.stat_screen_button.setCheckable(True)
@@ -284,10 +287,15 @@ class Character_screen(QMainWindow):
         self.skill_screen_button.setCheckable(True)
         self.skill_screen_button.triggered.connect(self.skill_screen)
         
+        self.combat_button = QAction("Combat", self)
+        self.combat_button.setCheckable(True)
+        self.combat_button.triggered.connect(lambda: print("Error: Not Assigned"))
+        
         self.tool_bar = QToolBar()
         self.addToolBar(self.tool_bar)
         self.tool_bar.addAction(self.stat_screen_button)
         self.tool_bar.addAction(self.skill_screen_button)
+        self.tool_bar.addAction(self.combat_button)
 
         self.file_menu = QMenu(self)
         save_action = QAction("Save", self)
@@ -303,6 +311,8 @@ class Character_screen(QMainWindow):
 
         self.skill_window.setLayout(self.skill_window_layout)
 
+        self.combat_window.setLayout(self.combat_window_layout)
+
         self.central_widget.setLayout(self.central_widget_layout)
         self.setCentralWidget(self.central_widget)
         self.stat_screen()
@@ -317,10 +327,14 @@ class Character_screen(QMainWindow):
         abs_file_path = os.path.join(cur_path, file_path)
         with open(abs_file_path, 'wb') as File:
             pickle.dump(self.character, File)
+    
+    def Combat_screen(self):
+        pass
 
 
     def stat_screen(self):
         self.skill_screen_button.setChecked(False)
+        self.combat_button.setChecked(False)
         self.central_widget_layout.setCurrentIndex(0)
         ## Widgets of the Screen
         ##      Row 1
@@ -511,6 +525,7 @@ class Character_screen(QMainWindow):
 
     def skill_screen(self):
         self.stat_screen_button.setChecked(False)
+        self.combat_button.setChecked(False)
         self.central_widget_layout.setCurrentIndex(1)
         #self.skillScreen = Skill_Screen(parent=self, character=self.character)
         #self.skill_window_layout.addWidget(self.skill_screen_tab)
@@ -533,7 +548,8 @@ class Character_screen(QMainWindow):
         self.speed.update_frames()
         self.coordination.update_frames()
         
-
+class Combat_Screen(QFrame):
+    pass
 
 class Skill_Screen(QFrame):
     def __init__(self, parent: Character_screen, character:Character = None):
@@ -1223,10 +1239,10 @@ class StatIncreaseWindow(QMainWindow):
         self.increase_level_button.clicked.connect(self.increase_level)
         self.mana_increase_button = QPushButton("Increase Con-Mana")
         self.mana_increase_button.clicked.connect(self.increase_conmana)
-        self.mana_increase_button.pressed.connect(self.increase_conmana)
+        #self.mana_increase_button.pressed.connect(self.increase_conmana)
 
-        self.decrease_level_button = QPushButton("Decrease Level")
-        self.decrease_level_button.clicked.connect(self.decrease_level)
+        #self.decrease_level_button = QPushButton("Decrease Level")
+        #self.decrease_level_button.clicked.connect(self.decrease_level)
         
         self.print_stats_button = QPushButton("Print Stats")
         self.print_stats_button.clicked.connect(self.print_stats)
@@ -1238,8 +1254,8 @@ class StatIncreaseWindow(QMainWindow):
         self.central_layout.addWidget(self.power_label, 4, 0)
         self.central_layout.addWidget(self.increase_level_button,5,0)
         self.central_layout.addWidget(self.mana_increase_button,6,0)
-        self.central_layout.addWidget(self.decrease_level_button,7,0)
-        self.central_layout.addWidget(self.print_stats_button,8,0)
+        #self.central_layout.addWidget(self.decrease_level_button,7,0)
+        self.central_layout.addWidget(self.print_stats_button,7,0)
     
 
     def print_stats(self):
@@ -1261,38 +1277,41 @@ class StatIncreaseWindow(QMainWindow):
         self.character.condensed_mana.level = int(self.usable_mana.value())
     
     def increase_conmana(self):
-        self.character.add_condensed_mana(10)
+        self.character.add_condensed_mana(1)
         self.usable_mana.setValue(self.character.condensed_mana.level)
         self._parent._parent.condensed_mana.update_frames()
 
-    def decrease_level(self):
-        self.character.decrease_stat_level(self.stat)
+    #def decrease_level(self):
+    #    self.character.decrease_stat_level(self.stat)
+    #    if self.stat.parent_stat:
+    #        self.stat.parent_stat.average_effective_levels()
+    #        self._parent.parent_stat.update_frames()
+    #    print(self.stat.level)
+    #    self.update_screens()
+    ###    #self._parent.update_frames()
+    #    self._parent.update_frames()
+    #    self._parent._parent.condensed_mana.update_frames()
+    #    self._parent._parent.level.update_frames()
+    
+    def increase_level(self):
+        print('con mana: ' + str(self.character.condensed_mana.level), 
+              'actual_mana to next ' + str(self.stat.actual_mana_to_next_level),
+              'mana to next ' + str(self.stat.mana_to_next_level), 
+              sep='\n#\n')
+        self.character.increase_stat_or_skill_level(self.stat)
         if self.stat.parent_stat:
             self.stat.parent_stat.average_effective_levels()
             self._parent.parent_stat.update_frames()
-        print(self.stat.level)
         self.update_screens()
-        #self._parent.update_frames()
         self._parent.update_frames()
         self._parent._parent.condensed_mana.update_frames()
         self._parent._parent.level.update_frames()
-    
-    def increase_level(self):
-        if self.character.condensed_mana.level >= self.stat.mana_to_next_level:
-            self.character.increase_stat_or_skill_level(self.stat)
-            if self.stat.parent_stat:
-                self.stat.parent_stat.average_effective_levels()
-                self._parent.parent_stat.update_frames()
-            self.update_screens()
-            self._parent.update_frames()
-            self._parent._parent.condensed_mana.update_frames()
-            self._parent._parent.level.update_frames()
 
 def main():
     app = QApplication()
     app.setStyle('Fusion')
 
-    window = MainWindow('ex')
+    window = MainWindow()
     window.resize(800, 600)
     window.show()
     sys.exit(app.exec())

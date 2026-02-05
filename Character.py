@@ -470,10 +470,7 @@ class Character():
             return False
         else:
             if stat.name in self.dict_of_stats:
-                if not stat.isparent:
-                    self.increase_stat_level(stat=stat, level=level)
-                else:
-                    self.increase_stat_level(stat=stat, level=level)
+                self.increase_stat_level(stat=stat, level=level)
 
             elif stat.name in self.skills_level.dict_of_skills:
                 self.increase_skill_level(skill=stat, level = level)
@@ -483,29 +480,34 @@ class Character():
                 #stats : Stat
     
     def check_if_con_mana_more_than_stat(self,skill_stat: Skill | Stat):
-        returnstat =  self.condensed_mana.level > skill_stat.mana_to_next_level
-        return returnstat
+        return_stat =  self.condensed_mana.level > skill_stat.mana_to_next_level
+        print()
+        print(self.condensed_mana.level, skill_stat.mana_to_next_level, sep= ' ### ', end= '\n\n' )
+        print(return_stat)
+        return return_stat
     
     def increase_skill_level(self, skill: Skill, level=1):
-        for _ in range(level):
-            if self.check_if_con_mana_more_than_stat(skill_stat=skill):
-                self.use_condensed_mana(skill.mana_to_next_level)
-                skill.total_mana_used += skill.mana_to_next_level
-                self.increase_next_level_requirement(stat=skill, level=1)
-                skill.level +=1
-                skill.calculate_stat_multiplier()
+        if self.check_if_con_mana_more_than_stat(skill_stat=skill):
+            self.use_condensed_mana(skill.mana_to_next_level)
+            skill.total_mana_used += skill.mana_to_next_level
+            self.increase_next_level_requirement(stat=skill, level=1)
+            skill.level +=1
+            skill.calculate_stat_multiplier()
                 
         self.skills_level.calculate_level()    
         self.calculate_character_level()
     
 
     def increase_stat_level(self, stat=  Stat, level=1):
-        for _ in range(level):
-            stat : Stat
-            if self.check_if_con_mana_more_than_stat(skill_stat=stat,):
-                self.use_condensed_mana(stat.mana_to_next_level)
-                self.increase_next_level_requirement(stat=stat, level = 1)
-                stat.level += 1
+        stat : Stat
+        if self.check_if_con_mana_more_than_stat(skill_stat=stat,):
+            print(self.condensed_mana.level, stat.mana_to_next_level)
+            self.use_condensed_mana(stat.mana_to_next_level)
+            stat.total_mana_used += stat.mana_to_next_level
+            self.increase_next_level_requirement(stat=stat, level = 1)
+            stat.level += 1
+        else:
+            print('did not enter increase stat level')
         self.calculate_character_level()
     
     def decrease_stat_level(self, stat=  Stat, level=1):
@@ -525,3 +527,66 @@ class Character():
     def decrease_next_level_requirement(self, stat: Stat | Skill, level=1):
         previous_actual_level_requirement = stat.actual_mana_to_next_level * (self.mana_requirement_increaser ** (level-1))
         stat.actual_mana_to_next_level = previous_actual_level_requirement
+        
+
+
+if __name__ == '__main__':
+    ben = Character()
+    import sys
+    
+    from PySide6 import QtCore, QtGui, QtWidgets
+    class main_window(QtWidgets.QMainWindow):
+        def __init__(self, character: Character, stat: Stat):
+            super().__init__()
+            self.character = character
+            self.stat = stat
+            self.character.add_condensed_mana(10)
+            self.main_widget = QtWidgets.QWidget()
+            self.setCentralWidget(self.main_widget)
+            
+            #widgets
+
+            self.button = QtWidgets.QPushButton('push')
+            self.level_window = QtWidgets.QLabel(f'level: {self.stat.level}')
+            self.stat_name = QtWidgets.QLabel(self.stat.name)
+            self.mana_requirement = QtWidgets.QLabel(f'next: {self.stat.mana_to_next_level}')
+            self.actual_mana_requirement = QtWidgets.QLabel(f'actual next: {self.stat.actual_mana_to_next_level}')
+            
+            self.con_mana = QtWidgets.QLabel(f'Con Mana: {self.character.condensed_mana.level}')
+            
+            #actions
+            self.button.clicked.connect(self.increase_level)
+            
+
+            #layout
+            
+            layout = QtWidgets.QVBoxLayout()
+            self.main_widget.setLayout(layout)
+            layout.addWidget(self.con_mana)
+            layout.addWidget(self.mana_requirement)
+            layout.addWidget(self.actual_mana_requirement)
+            layout.addWidget(self.stat_name)
+            layout.addWidget(self.level_window)
+            layout.addWidget(self.button)
+        
+        def update_widgets(self) -> None:
+            self.level_window.setText(f'level: {self.stat.level}')
+            self.con_mana.setText(f'Con Mana: {self.character.condensed_mana.level}')
+            self.mana_requirement.setText(f'next: {self.stat.mana_to_next_level}')
+            self.actual_mana_requirement.setText(f'actual next: {self.stat.actual_mana_to_next_level}')
+
+
+        def increase_level(self):
+            self.character.increase_stat_level(self.stat)
+            self.update_widgets()
+
+
+if __name__ == '__main__': 
+        app = QtWidgets.QApplication()
+        window = main_window(ben, ben.physical_strength)
+        window.show()
+        sys.exit(app.exec())
+    
+
+
+    

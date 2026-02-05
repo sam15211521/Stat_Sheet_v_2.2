@@ -103,17 +103,20 @@ intermediate = Mastery(name = "Intermediate",
                    minimum_level= 1, 
                    maximum_level= 109,
                    requires_basic= True, 
-                   multiplier= 3,
+                   multiplier= 2.5,
+                   discription=intermediate_discription
                     )
 expert = Mastery(name ="Expert",
                    minimum_level= 110,
                    maximum_level= 1000,
                    requires_basic= True,
                    multiplier= 6,
+                   discription=expert_discription
                    )
 master = Mastery(name = "Master",
                    minimum_level= 1001, 
                    maximum_level=10000,
                    requires_basic= True,
                    multiplier= 12,
+                   discription=master_discription
                    )
