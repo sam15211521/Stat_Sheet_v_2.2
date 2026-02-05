@@ -1,6 +1,5 @@
 from statistics import mean
 from math import floor, ceil, log
-from typing import Type
 from mastery import basic, beginner, intermediate, expert, master
 
 class Attribute():
