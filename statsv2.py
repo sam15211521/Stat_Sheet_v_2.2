@@ -147,13 +147,14 @@ class Stat(Attribute):
     def calculate_parent_stat_level(self):
         self.parent_stat.level = self.parent_stat.average_child_stat_levels()
     
-    def add_child_stat(self, child_stat):
-        if isinstance(child_stat, Stat):
-            self.is_parent = True
-            child_stat.parent_stat = self
-            self.child_stats[child_stat.name] = child_stat
-        else:
-            print(f'\nThe added instance <{child_stat}> is not a class Stat\n')
+    def add_child_stat(self, *child_stat):
+        for stat in child_stat:
+            if isinstance(stat, Stat):
+                self.is_parent = True
+                stat.parent_stat = self
+                self.child_stats[stat.name] = stat
+            else:
+                print(f'\nThe added instance <{child_stat}> is not a class Stat\n')
     
 class MajorStat(Attribute):
     def __init__(self, name='', discription='', mana_multiplier= 1, mana_capacity_flag=False):
@@ -176,6 +177,9 @@ class HiddenManaStat(Attribute):
         super().__init__(name, discription, mana_multiplier, mana_capacity_flag)
     
     def calculate_capacity_multiplier(self):
+        return None
+    
+    def calculate_base_power(self):
         return None
     
 

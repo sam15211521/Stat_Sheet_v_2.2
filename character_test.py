@@ -46,7 +46,8 @@ class Window(QMainWindow):
 
         self.increase_level = QPushButton('Increase Level')
         self.main_layout.addWidget(self.increase_level)
-        self.increase_level.clicked.connect(self.increase_skill_level)
+
+        #######self.increase_level.clicked.connect()#########
     
     def set_timer(self):
         self.timer = QTimer(self)
@@ -58,6 +59,6 @@ if __name__ == "__main__":
     
     ben = Character('Ben', 'human')
 
-    window = Window()
+    window = Window(ben)
     window.show()
     sys.exit(a.exec())
