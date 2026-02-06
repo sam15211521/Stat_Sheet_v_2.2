@@ -157,8 +157,8 @@ class Stat(Attribute):
                 print(f'\nThe added instance <{child_stat}> is not a class Stat\n')
     
 class MajorStat(Attribute):
-    def __init__(self, name='', discription='', mana_multiplier= 1, mana_capacity_flag=False):
-        super().__init__(name, discription, mana_multiplier, mana_capacity_flag)
+    def __init__(self, name='', discription='', mana_multiplier= 1, mana_capacity_flag=False, level=0):
+        super().__init__(name, discription, mana_multiplier, mana_capacity_flag,level)
         self._mana_unit = None
     @property
     def mana_unit(self):
