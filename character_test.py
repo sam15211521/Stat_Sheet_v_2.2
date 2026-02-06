@@ -9,7 +9,7 @@ from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QPushButton,
                                QLabel, QVBoxLayout)
 
 class Window(QMainWindow):
-    def __init__(self, character: statsv2.Skill):
+    def __init__(self, character: Character):
         super().__init__() 
         self.main_widget = QWidget()
         self.setCentralWidget(self.main_widget)
@@ -33,21 +33,41 @@ class Window(QMainWindow):
     def reset_timer(self):
         self.timer.stop()
         self.timer.start(5000)
+
     def add_to_layout(self):
         for name, attribute in self.subject.__dict__.items():
-            label = QLabel(f'{name} | {attribute}')
-            self.labels[name] = label
-            self.main_layout.addWidget(label)
+            if not isinstance(attribute, (Stat, MajorStat, SkillStat)):
+                label = QLabel(f'{name} | {attribute}')
+                self.labels[name] = label
+                self.main_layout.addWidget(label)
+            else:
+                label = QLabel(f'{name} | {attribute.level}')
+                self.labels[name] = label
+                self.main_layout.addWidget(label)
+    
+    def update_all_labels(self):
+        for name, label in self.labels.items():
+            if not isinstance(self.subject.__dict__[name], 
+                              (Stat, MajorStat, SkillStat)):
+                label.setText(f'{name} | {self.subject.__dict__[name]}')
+            else:
+                label.setText(f'{name} | {self.subject.__dict__[name].level}')
     
     def add_buttons(self):
         self.close_button = QPushButton('Close')
         self.main_layout.addWidget(self.close_button)
         self.close_button.clicked.connect(self.close)
 
-        self.increase_level = QPushButton('Increase Level')
-        self.main_layout.addWidget(self.increase_level)
+        self.increase_level_button = QPushButton('Increase Level')
+        self.main_layout.addWidget(self.increase_level_button)
+        self.increase_level_button.clicked.connect(self.increase_level)
+        
 
         #######self.increase_level.clicked.connect()#########
+    
+    def increase_level(self):
+        self.subject.physical_endurance.increase_level()
+        self.update_all_labels()
     
     def set_timer(self):
         self.timer = QTimer(self)
@@ -61,4 +81,4 @@ if __name__ == "__main__":
 
     window = Window(ben)
     window.show()
-    sys.exit(a.exec())
+    sys.exit(app.exec())
