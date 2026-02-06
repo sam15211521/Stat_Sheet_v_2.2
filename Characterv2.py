@@ -1,5 +1,8 @@
-from statsv2 import MajorStat, Stat ,Skill, SkillStat, CondensedMana, HiddenManaStat
+from statsv2 import (MajorStat, Stat ,Skill, 
+                     SkillStat, CondensedMana, HiddenManaStat, 
+                     Energy_Potential)
 import math
+from colorama import Fore
 
 class Character():
     _dict_of_characters = {} 
@@ -10,8 +13,11 @@ class Character():
         self.dict_of_kills = {}
         self.dict_of_skills = {}
         self.dict_of_major_stats = {}
+        self.dict_of_minor_stats = {}
         self.dict_of_stats = {}
         self.dict_of_stats_affecting_level = {}
+        self.dict_of_stats_affecting_health = {}
+        self.dict_of_stats_affecting_mana = {}
         self.dict_of_taggable_stats = {}
         self.mana_requirement_increaser = 1.008
         self.stat_strengthening_increaser = 1.01
@@ -21,7 +27,6 @@ class Character():
             self.body_mana_stat = 99798405
         else:
             self.body_mana_stat = body_mana_multiplier
-        self._stats_and_skills_effecting_mana = {}
         
         # the major stats
         self.health = MajorStat("Health")
@@ -33,7 +38,7 @@ class Character():
         self.total_condensed_mana = MajorStat("Total Condensed Mana")
 
         self.hidden_mana_stat = HiddenManaStat("Base Mana Capacity", 
-                                           mana_capacity_flag=True,)
+                                           affects_mana=True,)
         self.hidden_mana_stat.level = self.body_mana_stat
 
                 #regular stats
@@ -45,7 +50,7 @@ class Character():
         self.physical_strength = Stat(name = "Physical Strength",
                                       is_taggable=True)
         self.magical_strength = Stat(name = "Mana Strength",
-                                     mana_capacity_flag=True,
+                                     affects_mana=True,
                                      mana_multiplier=1.001,
                                      is_taggable=True)
         self.strength.add_child_stat(self.physical_strength, 
@@ -58,7 +63,7 @@ class Character():
         self.physical_resistance = Stat(name="Physical Resistance",
                                      is_taggable=True)
         self.magic_resistance = Stat(name="Mana Resistance",
-                                     mana_capacity_flag=True,
+                                     affects_mana=True,
                                      mana_multiplier=1.001,
                                      is_taggable=True)
         self.spiritual_resistance = Stat(name="Spiritual Resistance",
@@ -74,7 +79,7 @@ class Character():
         self.health_regen = Stat(name="Health Regeneration",
                                      is_taggable=True)
         self.mana_regen= Stat(name="Mana Regeneration",
-                              mana_capacity_flag=True,
+                              affects_mana=True,
                               mana_multiplier=1.0001,
                                      is_taggable=True)
         self.regeneration.add_child_stat(self.health_regen,
@@ -87,7 +92,7 @@ class Character():
         self.physical_endurance = Stat(name="Physical Endurance",
                                      is_taggable=True)
         self.magic_endurance = Stat(name="Magic_Endurance",
-                                    mana_capacity_flag=True,
+                                    affects_mana=True,
                                     mana_multiplier=1.01,
                                      is_taggable=True)
         self.endurance.add_child_stat(self.physical_endurance,
@@ -105,30 +110,160 @@ class Character():
                                     self.coordination)
         
         #Energy potential
-        self.energy_potential = Stat(name= "Energy Potential", 
-                                     mana_capacity_flag=True,
+        self.energy_potential = Energy_Potential(name= "Energy Potential", 
+                                     affects_mana=True,
                                      mana_multiplier=1.01,
                                      affects_character_level=True)
         
         # Stat affected by all skills
         self.skill_stat = SkillStat(name = "Skills Level")
         
+        self.add_stats_to_dict_of_stats_and_major_stats()
+        
 
+    def add_skills(self, *skills):
+        for skill in skills:
+            self.add_skill(skill)
         
     
     def add_skill(self, skill):
         if isinstance(skill, Skill) and skill not in self.dict_of_skills:
             self.dict_of_skills[skill.name] = skill
             self.skill_stat.dict_of_skills[skill.name] = skill
+    
+    @property
+    def skills(self):
+        return self.dict_of_skills
+    @property
+    def kills(self):
+        return self.dict_of_kills
+    @property
+    def taggable_stats(self):
+        return self.dict_of_taggable_stats
+    
+    @property
+    def major_stats (self):
+        return self.dict_of_major_stats
+    @property
+    def minor_stats(self):
+        return self.dict_of_minor_stats
+    
+    @property
+    def stats_affecting_health(self):
+        return self.dict_of_stats_affecting_health
+    
+    @property
+    def stats_affecting_level(self):
+        return self.dict_of_stats_affecting_level
+    
+    @property
+    def stats_affecting_mana(self):
+        return self.dict_of_stats_affecting_mana
+    
+   ########################################################
+   # Methods to increase levels
+    def calculate_character_level(self):
+        for stat in self.stats_affecting_level.values():
+            stat: Stat
+            print(stat.name, stat.level)
+    def increase_stat_level(self, stat: Stat):
+        stat.increase_level()
+        self.calculate_character_level()
+
+    def increase_skill_level(self, skill: Skill):
+        skill.increase_level()
+        self.calculate_stat_skill_level()
+
+    def calculate_stat_skill_level(self):
+        self.skill_stat.calculate_level()
+        self.calculate_character_level()
 
 
 
+    
 
+
+    
+    def add_stats_to_dict_of_stats_and_major_stats(self):
+        for stat in self.__dict__.values():
+            self.add_new_stat(stat)
+    
+    def add_new_stat(self, stat):
+        if isinstance(stat, MajorStat):
+            self.dict_of_stats[stat.name] = stat
+            self.dict_of_major_stats[stat.name] = stat
+            self.add_major_stats_to_dict_of_major_stats(stat)
+        elif isinstance(stat, Stat) and not stat.is_parent: 
+            self.dict_of_stats[stat.name] = stat
+            self.dict_of_taggable_stats[stat.name] = stat
+            self.dict_of_minor_stats[stat.name] = stat
+            self.determining_stats_affect(stat=stat)
+        elif isinstance(stat, Stat) and stat.is_parent:
+            self.dict_of_stats[stat.name] = stat
+            self.dict_of_minor_stats[stat.name] = stat
+            self.determining_stats_affect(stat=stat)
+        elif isinstance(stat, HiddenManaStat):
+            self.dict_of_stats[stat.name] = stat
+            #not part of affects mana as it does a slightly different part
+        elif isinstance(stat, (SkillStat,Energy_Potential)):
+            self.dict_of_stats[stat.name] = stat
+            self.dict_of_minor_stats[stat.name] = stat
+            self.dict_of_stats_affecting_level[stat.name] = stat
+            # also not part of affects mana as it causes another change
+    
+    def determining_stats_affect(self, stat:Stat):
+        self.determine_if_stat_affects_health_level(stat)
+        self.determine_if_stat_affects_level(stat)
+        self.determine_if_stat_affects_mana_level(stat)
+        
+   ############################################################## 
+   # These methods only really occur with determining_stats_affect
+   # I decided to write them here just to help me with readability
+    def determine_if_stat_affects_mana_level(self, stat: Stat):
+        if stat.affects_mana:
+            self.dict_of_stats_affecting_mana[stat.name] = stat
+    
+    def determine_if_stat_affects_health_level(self, stat: Stat):
+        if stat.affects_health:
+            self.dict_of_stats_affecting_health[stat.name] = stat
+            
+    def determine_if_stat_affects_level(self, stat: Stat):
+        if stat.affects_character_level:
+            self.dict_of_stats_affecting_level[stat.name] = stat
+
+    def add_major_stats_to_dict_of_major_stats(self, stat: Stat):
+        self.dict_of_major_stats[stat.name] = stat
+    #############################################################
+    def print_dict_items(self):
+        print(Fore.CYAN+'skills'+Fore.RESET)
+        print(self.dict_of_skills)
+        print(Fore.CYAN+'stats'+Fore.RESET)
+        print(*[(name, stat) for name, stat in self.dict_of_stats.items()], sep='\n')
+
+        print(Fore.CYAN+'major stats'+Fore.RESET)
+        print(*[(name, stat) for name, stat in self.dict_of_major_stats.items()], sep='\n')
+
+        print(Fore.CYAN+'minor stats'+Fore.RESET)
+        print(*[(name, stat) for name, stat in self.dict_of_minor_stats.items()], sep='\n')
+
+        print(Fore.CYAN+'stats affecting level'+ Fore.RESET)
+        print(*[(name, stat) for name, stat in self.dict_of_stats_affecting_level.items()], sep='\n')
+
+        print(Fore.CYAN+'taggable stats'+Fore.RESET)
+        print(*[(name, stat) for name, stat in self.dict_of_taggable_stats.items()], sep='\n')
+        
 
 
 if __name__ == '__main__':
     Ben = Character('Ben')
-    bab = Skill('BaB')
-    Ben.add_skill(bab)
-    print(Ben.skill_stat.dict_of_skills, Ben.dict_of_skills, 
-          sep='\n')
+    bab = Skill('BaB', tagged_stats=['Energy Potential'])
+    math = Skill("Math", tagged_stats=['Mana Regeneration', 'Mana Strength'])
+    Ben.add_skills(bab, math)
+    for i in range(100):
+
+        Ben.increase_skill_level(bab)
+    for i in range(100):
+        Ben.increase_skill_level(math)
+    
+    print(*[key for key in Ben.stats_affecting_level.keys()])
+    Ben.calculate_character_level()

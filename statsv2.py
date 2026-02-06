@@ -7,7 +7,7 @@ class Attribute():
     def __init__(self, name='', 
                  description= '', 
                  mana_multiplier =1,
-                 mana_capacity_flag = False,
+                 affects_mana = False,
                  level =0):
         self.name = name
         self._level = level
@@ -24,7 +24,7 @@ class Attribute():
         self.mana_capacity_multiplier = mana_multiplier
 
         self._attribute_dictionary[self.name] = self
-        self._affects_mana_capacity = mana_capacity_flag
+        self.affects_mana = affects_mana
         self.original_mana_multiplier = self.mana_capacity_multiplier
     
     
@@ -43,18 +43,9 @@ class Attribute():
         self.calculate_next_level_requirement()
 
 
-    @property
-    def affects_mana_capacity(self):
-        return self._affects_mana_capacity
-
-    @affects_mana_capacity.setter
-    def affects_mana_capacity(self, flag):
-        if isinstance(flag, bool):
-            self._affects_mana_capacity = flag
-
     
     def calculate_capacity_multiplier(self):
-        if self.affects_mana_capacity:
+        if self.affects_mana:
             self.mana_capacity_multiplier= round(
                 self.original_mana_multiplier * 1.01 ** self.level,
                 4)
@@ -80,21 +71,24 @@ class Stat(Attribute):
                  name='', 
                  description='', 
                  mana_multiplier=1, 
-                 mana_capacity_flag=False, 
                  level=0,
-                 affects_character_level = False,
                  is_taggable = False,
                  is_parent= False,
                  child_stats={},
+                 affects_character_level = False,
+                 affects_health = False,
+                 affects_mana=False, 
                  ):
         super().__init__(name, description, 
-                         mana_multiplier, mana_capacity_flag, level)
+                         mana_multiplier, affects_mana, level)
 
         self.is_taggable = is_taggable
         self.affects_character_level = affects_character_level
         self._is_parent = is_parent
         self.child_stats = {}
         self._parent_stat : Stat = None
+        self.affects_health = affects_health
+        self.affects_mana = affects_mana
     
     
     @property
@@ -156,9 +150,20 @@ class Stat(Attribute):
             else:
                 print(f'\nThe added instance <{child_stat}> is not a class Stat\n')
     
+class Energy_Potential(Stat):
+    def __init__(self, name='', description='', mana_multiplier=1, 
+                 level=0, is_taggable=False, is_parent=False, 
+                 child_stats={}, affects_character_level=False, 
+                 affects_health=False, affects_mana=False,):
+
+        super().__init__(name, description, mana_multiplier, 
+                         level, is_taggable, is_parent, 
+                         child_stats, affects_character_level, 
+                         affects_health, affects_mana)
+
 class MajorStat(Attribute):
-    def __init__(self, name='', discription='', mana_multiplier= 1, mana_capacity_flag=False, level=0):
-        super().__init__(name, discription, mana_multiplier, mana_capacity_flag,level)
+    def __init__(self, name='', discription='', mana_multiplier= 1, affects_mana=False, level=0):
+        super().__init__(name, discription, mana_multiplier, affects_mana,level)
         self._mana_unit = None
     @property
     def mana_unit(self):
@@ -173,8 +178,8 @@ class MajorStat(Attribute):
             return super().__str__()
     
 class HiddenManaStat(Attribute):
-    def __init__(self, name='', discription='', mana_multiplier=1, mana_capacity_flag=False):
-        super().__init__(name, discription, mana_multiplier, mana_capacity_flag)
+    def __init__(self, name='', discription='', mana_multiplier=1, affects_mana=False):
+        super().__init__(name, discription, mana_multiplier, affects_mana)
     
     def calculate_capacity_multiplier(self):
         return None
@@ -184,8 +189,8 @@ class HiddenManaStat(Attribute):
     
 
 class CondensedMana(MajorStat):
-    def __init__(self, name='', discription='', mana_multiplier=1,mana_capacity_flag=False):
-        super().__init__(name, discription, mana_multiplier, mana_capacity_flag)
+    def __init__(self, name='', discription='', mana_multiplier=1,affects_mana=False):
+        super().__init__(name, discription, mana_multiplier, affects_mana)
         self._power = 1
 
     @property
@@ -208,20 +213,13 @@ class SkillStat(Attribute):
                  name='', 
                  description='', 
                  mana_multiplier=1, 
-                 mana_capacity_flag=False, 
+                 affects_mana=False, 
                  level=0):
         super().__init__(name, description, mana_multiplier, 
-                         mana_capacity_flag, level)
+                         affects_mana, level)
         self.dict_of_skills = {}
-        self._affects_character_level = True
+        self.affects_character_level = True
     
-    @property
-    def affects_character_level(self):
-        return self._affects_character_level
-    @affects_character_level.setter
-    def affects_character_level(self, flag):
-        if isinstance(flag, bool):
-            self._affects_character_level = flag
 
     # takes the amount of mana used on the skills in dict_of_skills and sets the 
     # level of the SkillStat based on it.
@@ -263,14 +261,15 @@ class Skill(Attribute):
                  name='', 
                  description='', 
                  mana_multiplier=1,
-                 mana_capacity_flag=False, 
+                 affects_mana=False, 
                  level=0,
                  tagged_stats = [],
-                 stat_increase_multiplier=1):
+                 stat_increase_multiplier=1,):
+
         super().__init__(name, 
                          description, 
                          mana_multiplier,     
-                         mana_capacity_flag, 
+                         affects_mana, 
                          level)
         self._basics = False
         self.mastery = basic
@@ -312,6 +311,9 @@ class Skill(Attribute):
         self.calculate_capacity_multiplier()
         self.calculate_effective_skill_level()
         self.calculate_stat_multiplier()
+    
+    def increase_level(self):
+        self.level += 1
     
     def calculate_effective_skill_level(self):
         #effective level is depended on mastery of the skill
@@ -377,9 +379,7 @@ class Skill(Attribute):
 
 
 if __name__ == '__main__':
-    a = Skill('aba', stat_increase_multiplier=.8)
-    a.affects_mana_capacity = True
-    a.level = 33
-    a.calculate_stat_multiplier()
-    a.basics = True
-    print(a.mastery)
+    a = Stat(name='hello', affects_mana=True, affects_character_level=True,
+             affects_health=True)
+    b = True
+    print((a.affects_character_level, a.affects_mana, a.affects_health) if b else 'None')
