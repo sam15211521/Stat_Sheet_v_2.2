@@ -1,6 +1,7 @@
 from statistics import mean
 from math import floor, ceil, log
 from mastery import basic, beginner, intermediate, expert, master
+from colorama import Fore, Back
 
 class Attribute():
     _attribute_dictionary = {}
@@ -26,6 +27,9 @@ class Attribute():
         self._attribute_dictionary[self.name] = self
         self.affects_mana = affects_mana
         self.original_mana_multiplier = self.mana_capacity_multiplier
+    
+    def __str__(self):
+        return Fore.CYAN + f'{self.name}: {Fore.GREEN}{self.level}{Fore.RESET}'
     
     
     #getter and setter function of _level
@@ -179,11 +183,6 @@ class MajorStat(Attribute):
     
 
 
-
-
-
-
-
 class HiddenManaStat(Attribute):
     def __init__(self, name='', discription='', mana_multiplier=1, affects_mana=False):
         super().__init__(name, discription, mana_multiplier, affects_mana)
@@ -209,14 +208,14 @@ class CondensedMana():
     def level(self, value):
         self.previous_level = self._level
         self._level = value
-
-    
-
-
     
     def __str__(self):
-        return_string = f"Con Mana: {self.level}"
-        return return_string
+        return f"{Fore.CYAN}{self.name}: {Fore.GREEN}{self.level}{Fore.RESET}"
+
+    
+
+
+    
 
 
 

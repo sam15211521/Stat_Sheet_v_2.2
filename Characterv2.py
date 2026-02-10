@@ -174,10 +174,14 @@ class Character():
    ########################################################
 
     def print_character_levels(self):
-        print('level: ', self.level)
+        print(Fore.CYAN,'level: ',
+              Fore.GREEN, self.level,
+              Fore.RESET)
         for stat in self.stats_affecting_level.values():
             stat: Stat
-            print(stat.name, stat.effective_level)
+            print(Fore.CYAN, stat.name, 
+                  Fore.GREEN, stat.effective_level, 
+                  Fore.RESET)
    # Methods to increase levels
     def increase_con_mana(self, value):
         self.condensed_mana.level += value
@@ -290,8 +294,9 @@ if __name__ == '__main__':
     ben.add_skills(bab, mathematics)
     ben.increase_con_mana(200)
     ben.print_character_levels()
-    print(ben.condensed_mana.level)
-    print(ben.total_condensed_mana.level)
+    print(ben.condensed_mana)
+    print(ben.total_condensed_mana)
+    print(ben.strength)
     
 
 
