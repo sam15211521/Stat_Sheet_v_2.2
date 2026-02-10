@@ -177,6 +177,13 @@ class MajorStat(Attribute):
         else:
             return super().__str__()
     
+
+
+
+
+
+
+
 class HiddenManaStat(Attribute):
     def __init__(self, name='', discription='', mana_multiplier=1, affects_mana=False):
         super().__init__(name, discription, mana_multiplier, affects_mana)
@@ -188,17 +195,24 @@ class HiddenManaStat(Attribute):
         return None
     
 
-class CondensedMana(MajorStat):
-    def __init__(self, name='', discription='', mana_multiplier=1,affects_mana=False):
-        super().__init__(name, discription, mana_multiplier, affects_mana)
-        self._power = 1
-
+class CondensedMana():
+    def __init__(self, name, level=0):
+        self.name = name
+        self._level = level
+        self.previous_level = level
+    
     @property
-    def power(self):
-        return self._power
-    @power.setter
-    def power(self, value):
-        self._power = value
+    def level(self):
+        return self._level
+    
+    @level.setter
+    def level(self, value):
+        self.previous_level = self._level
+        self._level = value
+
+    
+
+
     
     def __str__(self):
         return_string = f"Con Mana: {self.level}"

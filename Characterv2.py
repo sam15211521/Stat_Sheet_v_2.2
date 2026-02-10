@@ -1,8 +1,10 @@
 from statsv2 import (MajorStat, Stat ,Skill, 
                      SkillStat, CondensedMana, HiddenManaStat, 
-                     Energy_Potential)
-import math
+                     Energy_Potential,)
+from math import log10, log, floor, ceil 
+
 from colorama import Fore
+from timeit import default_timer as timer
 
 class Character():
     _dict_of_characters = {} 
@@ -33,9 +35,9 @@ class Character():
         self.max_health = MajorStat("Max Health")
         self.max_mana = MajorStat("Max Mana")
         self.current_mana = MajorStat("Mana")
-        self.level = MajorStat("Level")
-        self.condensed_mana = CondensedMana("Condensed Mana")
-        self.total_condensed_mana = MajorStat("Total Condensed Mana")
+        self.level = 0
+        self._condensed_mana = CondensedMana("Condensed Mana")
+        self.total_condensed_mana = CondensedMana("Total Condensed Mana")
 
         self.hidden_mana_stat = HiddenManaStat("Base Mana Capacity", 
                                            affects_mana=True,)
@@ -160,15 +162,34 @@ class Character():
     def stats_affecting_mana(self):
         return self.dict_of_stats_affecting_mana
     
+    @property
+    def condensed_mana(self):
+        return self._condensed_mana
+    
+    @condensed_mana.setter
+    def condensed_mana(self, value):
+        self._condensed_mana = value
+
+    
    ########################################################
-   # Methods to increase levels
-    def calculate_character_level(self):
+
+    def print_character_levels(self):
+        print('level: ', self.level)
         for stat in self.stats_affecting_level.values():
             stat: Stat
-            print(stat.name, stat.level)
+            print(stat.name, stat.effective_level)
+   # Methods to increase levels
+    def increase_con_mana(self, value):
+        self.condensed_mana.level += value
+        self.total_condensed_mana.level += value
+        self.calculate_character_level()
+
+    def calculate_character_level(self):
+        self.level = floor(log((1.008-1) * self.total_condensed_mana.level/7 + 1, 
+                          1.008))
+
     def increase_stat_level(self, stat: Stat):
         stat.increase_level()
-        self.calculate_character_level()
 
     def increase_skill_level(self, skill: Skill):
         skill.increase_level()
@@ -176,8 +197,11 @@ class Character():
 
     def calculate_stat_skill_level(self):
         self.skill_stat.calculate_level()
-        self.calculate_character_level()
 
+    # Methods to determine if a level can be increased based on mana
+
+    def increase_stat_level(self):
+        useable
 
 
     
@@ -238,32 +262,44 @@ class Character():
         print(Fore.CYAN+'skills'+Fore.RESET)
         print(self.dict_of_skills)
         print(Fore.CYAN+'stats'+Fore.RESET)
-        print(*[(name, stat) for name, stat in self.dict_of_stats.items()], sep='\n')
+        print(*[(name, stat) for name, stat in self.dict_of_stats.items()], 
+              sep='\n')
 
         print(Fore.CYAN+'major stats'+Fore.RESET)
-        print(*[(name, stat) for name, stat in self.dict_of_major_stats.items()], sep='\n')
+        print(*[(name, stat) for name, stat in self.dict_of_major_stats.items()], 
+              sep='\n')
 
         print(Fore.CYAN+'minor stats'+Fore.RESET)
-        print(*[(name, stat) for name, stat in self.dict_of_minor_stats.items()], sep='\n')
+        print(*[(name, stat) for name, stat in self.dict_of_minor_stats.items()], 
+              sep='\n')
 
         print(Fore.CYAN+'stats affecting level'+ Fore.RESET)
-        print(*[(name, stat) for name, stat in self.dict_of_stats_affecting_level.items()], sep='\n')
+        print(*[(name, stat) for name, stat in self.dict_of_stats_affecting_level.items()], 
+              sep='\n')
 
         print(Fore.CYAN+'taggable stats'+Fore.RESET)
-        print(*[(name, stat) for name, stat in self.dict_of_taggable_stats.items()], sep='\n')
+        print(*[(name, stat) for name, stat in self.dict_of_taggable_stats.items()], 
+              sep='\n')
         
 
 
 if __name__ == '__main__':
-    Ben = Character('Ben')
+    ben = Character('Ben')
     bab = Skill('BaB', tagged_stats=['Energy Potential'])
-    math = Skill("Math", tagged_stats=['Mana Regeneration', 'Mana Strength'])
-    Ben.add_skills(bab, math)
-    for i in range(100):
-
-        Ben.increase_skill_level(bab)
-    for i in range(100):
-        Ben.increase_skill_level(math)
+    mathematics = Skill("Math", tagged_stats=['Mana Regeneration', 'Mana Strength'])
+    ben.add_skills(bab, mathematics)
+    ben.increase_con_mana(200)
+    ben.print_character_levels()
+    print(ben.condensed_mana.level)
+    print(ben.total_condensed_mana.level)
     
-    print(*[key for key in Ben.stats_affecting_level.keys()])
-    Ben.calculate_character_level()
+
+
+
+    # in this system, levels are all based on mana... why then should the level
+    #  of the character be based on the average of all levels... why not
+    #  make the level of a character be based on how much mana the character
+    #  has? but... expecially if the con mana that is absorbed is based on how
+    #  much ... yep I am soled
+    # average = sum(n+m) / len(m->n)
+    # level =  len(m->n) * 

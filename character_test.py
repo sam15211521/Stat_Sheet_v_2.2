@@ -26,6 +26,7 @@ class Window(QMainWindow):
         self.timer = None
         #self.set_timer()
 
+
     def keyPressEvent(self, event):
         if event.key() == Qt.Key.Key_Q:
             self.close()
@@ -37,9 +38,11 @@ class Window(QMainWindow):
     def add_to_layout(self):
         for name, attribute in self.subject.__dict__.items():
             if not isinstance(attribute, (Stat, MajorStat, SkillStat)):
-                label = QLabel(f'{name} | {attribute}')
-                self.labels[name] = label
-                self.main_layout.addWidget(label)
+                if name[:4] != 'dict':
+                    label = QLabel(f'{name} | {attribute}')
+                    self.labels[name] = label
+                    self.main_layout.addWidget(label)
+                
             else:
                 label = QLabel(f'{name} | {attribute.level}')
                 self.labels[name] = label
