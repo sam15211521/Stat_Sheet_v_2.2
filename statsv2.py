@@ -29,7 +29,11 @@ class Attribute():
         self.original_mana_multiplier = self.mana_capacity_multiplier
     
     def __str__(self):
-        return Fore.CYAN + f'{self.name}: {Fore.GREEN}{self.level}{Fore.RESET}'
+        return_string = Fore.CYAN + f'{self.name}:' \
+            f'{Fore.GREEN}{self.level}'\
+            f'{Fore.CYAN} | {Fore.GREEN} {self.effective_level}'\
+            f'{Fore.RESET}'
+        return return_string
     
     
     #getter and setter function of _level
@@ -46,7 +50,6 @@ class Attribute():
         self.increase_total_mana_used()
         self.calculate_next_level_requirement()
 
-
     
     def calculate_capacity_multiplier(self):
         if self.affects_mana:
@@ -62,10 +65,11 @@ class Attribute():
         self.mana_to_next_level = ceil(self.actual_mana_to_next_level)
     
     def calculate_base_power(self):
-        self._base_power = round(1.01 ** self.level,2)
+        self._base_power = round(1.01 ** self.level,5)
     
     def increase_level(self):
         self.level += 1
+        
     
     def decrease_level(self):
         self.level -= 1
@@ -93,6 +97,7 @@ class Stat(Attribute):
         self._parent_stat : Stat = None
         self.affects_health = affects_health
         self.affects_mana = affects_mana
+        self.skills_affecting_level = []
     
     
     @property
@@ -134,8 +139,10 @@ class Stat(Attribute):
             if isinstance(self.parent_stat, Stat):
                 self.parent_stat.calculate_parent_stat_level()
 
+        self.total_mana_used += self.mana_to_next_level
         self.calculate_capacity_multiplier()
         self.calculate_base_power()
+        self.calculate_next_level_requirement()
 
     def average_child_stat_levels(self):
         levels = [stat.level for stat in self.child_stats.values()]
@@ -232,6 +239,8 @@ class SkillStat(Attribute):
                          affects_mana, level)
         self.dict_of_skills = {}
         self.affects_character_level = True
+        self.child_stats = False
+        self.is_parent = False
     
 
     # takes the amount of mana used on the skills in dict_of_skills and sets the 
@@ -277,15 +286,17 @@ class Skill(Attribute):
                  affects_mana=False, 
                  level=0,
                  tagged_stats = [],
-                 stat_increase_multiplier=1,):
+                 stat_increase_multiplier=1,
+                 basics = False):
 
         super().__init__(name, 
                          description, 
                          mana_multiplier,     
                          affects_mana, 
                          level)
-        self._basics = False
+        self._basics = basics
         self.mastery = basic
+        self.master_effective_level = 0
 
         self.stats_to_tag = tagged_stats
         self.tagged_stats = {}
@@ -296,6 +307,14 @@ class Skill(Attribute):
         self.original_stat_increase_multiplier = stat_increase_multiplier
             # stat increase multiplier must be less than 1
         self.original_mana_multiplier = self.mana_capacity_multiplier
+    
+    def __str__(self):
+        return_string = Fore.CYAN + f'{self.name}:' \
+            f'{Fore.GREEN}{self.level}'\
+            f'{Fore.CYAN} | {Fore.GREEN} {self.master_effective_level}'\
+            f'{Fore.CYAN} | {Fore.GREEN} {self.effective_level}'\
+            f'{Fore.RESET}'
+        return return_string
     
     @property
     def basics(self):
@@ -330,7 +349,7 @@ class Skill(Attribute):
     
     def calculate_effective_skill_level(self):
         #effective level is depended on mastery of the skill
-        self.effective_level = self.level * self.mastery.multiplier
+        self.master_effective_level = self.level * self.mastery.multiplier
 
     def make_dictionary_of_tagged_stats(self, stats_to_tag=None):
         if not isinstance(stats_to_tag, list):

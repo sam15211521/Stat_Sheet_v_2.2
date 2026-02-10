@@ -3,7 +3,7 @@ from statsv2 import (MajorStat, Stat ,Skill,
                      Energy_Potential,)
 from math import log10, log, floor, ceil 
 
-from colorama import Fore
+from colorama import Fore, Style
 from timeit import default_timer as timer
 
 class Character():
@@ -173,39 +173,113 @@ class Character():
     
    ########################################################
 
-    def print_character_levels(self):
-        print(Fore.CYAN,'level: ',
-              Fore.GREEN, self.level,
-              Fore.RESET)
+    def print_character_levels(self,flag=False):
+        return_string = ""
+        string_list = []
+        aligned_strings=[]
+        return_string += f"{Fore.CYAN}level: {Fore.GREEN} {self.level}\n"
+        return_string += f"{self.condensed_mana}\n"
+
         for stat in self.stats_affecting_level.values():
             stat: Stat
-            print(Fore.CYAN, stat.name, 
-                  Fore.GREEN, stat.effective_level, 
-                  Fore.RESET)
+            string_list.append([f'{stat}\n',False])
+
+            if stat.is_parent:
+                for child_stat in stat.child_stats.values():
+                    string_list.append([f'   {child_stat}\n',True])
+                pass
+
+        return self.printscreen(string_list=string_list,
+                                return_string=return_string)
+
+
+    def printscreen(self, string_list, return_string):
+        aligned_strings = []
+        for line in string_list:
+            line: str
+            try:
+                prefix, suffix = line[0].split(':',maxsplit=1)
+            except ValueError:
+                aligned_strings.append(line[0])
+            level, effective_level = suffix.split('|',1)
+            if line[1]:
+                levels = f'{level.ljust(15)}|{effective_level}'
+                aligned_strings.append(f'{Style.DIM}{prefix.ljust(30)}:'\
+                                       f' {levels}{Style.NORMAL}')
+            else:
+                levels = f'{level.ljust(15)}|{effective_level}'
+                aligned_strings.append(f'{prefix.ljust(35)}: {levels}')
+                
+        for string2 in aligned_strings:
+            return_string += f'{string2}'
+        return_string+=Fore.RESET
+        return return_string
+
    # Methods to increase levels
     def increase_con_mana(self, value):
         self.condensed_mana.level += value
         self.total_condensed_mana.level += value
         self.calculate_character_level()
 
+
     def calculate_character_level(self):
         self.level = floor(log((1.008-1) * self.total_condensed_mana.level/7 + 1, 
                           1.008))
 
     def increase_stat_level(self, stat: Stat):
-        stat.increase_level()
+        #increases the stat's level but also calculates the effective level
+        #based on the character's current energy potential
+        if self.condensed_mana.level >= stat.mana_to_next_level: 
+            if not stat.is_parent:
+                self.condensed_mana.level -= stat.mana_to_next_level
+            stat.increase_level()
+            self.calculate_effective_stat_level(stat)
+            if not isinstance(stat, (Energy_Potential, SkillStat)):
+                self.recalculate_effective_levels()
+                
+                
+            return True
+        else:
+            return False
+    
+    def calculate_effective_stat_level(self, stat: Stat):
+        if not isinstance(stat,Energy_Potential):
+            effective_level = floor(stat.level * self.energy_potential._base_power)
+            stat.effective_level=effective_level
+        else:
+            stat.effective_level = stat.level
+
+    def recalculate_effective_levels(self):
+        for stat in self.taggable_stats.values():
+            if not isinstance(stat, Energy_Potential):
+                stat: Stat
+                stat.effective_level = floor(stat.level * self.energy_potential._base_power)
+        for stat in self.stats_affecting_level.values():
+            if not isinstance(stat, Energy_Potential):
+                stat: Stat
+                stat.effective_level = floor(stat.level * self.energy_potential._base_power)
+            
+        
 
     def increase_skill_level(self, skill: Skill):
-        skill.increase_level()
-        self.calculate_stat_skill_level()
+        if self.condensed_mana.level >= skill.mana_to_next_level: 
+            self.condensed_mana.level -= skill.mana_to_next_level
+            skill.increase_level()
+        else:
+            return False
+    def calculate_effective_skill_level(self, skill: Skill):
+        ##############################
+        ##############################
+        ##############################
+        pass
 
     def calculate_stat_skill_level(self):
         self.skill_stat.calculate_level()
 
     # Methods to determine if a level can be increased based on mana
 
-    def increase_stat_level(self):
-        useable
+
+
 
 
     
@@ -289,15 +363,40 @@ class Character():
 
 if __name__ == '__main__':
     ben = Character('Ben')
-    bab = Skill('BaB', tagged_stats=['Energy Potential'])
-    mathematics = Skill("Math", tagged_stats=['Mana Regeneration', 'Mana Strength'])
-    ben.add_skills(bab, mathematics)
-    ben.increase_con_mana(200)
-    ben.print_character_levels()
-    print(ben.condensed_mana)
-    print(ben.total_condensed_mana)
-    print(ben.strength)
+    ben.increase_con_mana(20000)
+    for i in range(200):
+        ben.increase_stat_level(ben.speed)
+    for i in range(100):
+       ben.increase_stat_level(ben.energy_potential)
+    for i in range(200):
+        ben.increase_stat_level(ben.coordination)
     
+    for i in range(300):
+        ben.increase_stat_level(ben.physical_endurance)
+    for i in range(300):
+        ben.increase_stat_level(ben.magic_endurance)
+    ben.add_skill(Skill(name='Mana Condensation', affects_mana=True, 
+                        mana_multiplier=1.001, tagged_stats=[
+                            ben.mana_regen,
+                            ben.magic_endurance,
+                            ben.magic_resistance,
+                            ben.magical_strength
+                                                             ],
+                        stat_increase_multiplier=1.001,
+                        basics= True))
+
+    for i in range(100):
+        
+        ben.increase_skill_level(ben.skills["Mana Condensation"])
+    
+    ben.calculate_effective_skill_level(ben.skills["Mana Condensation"])
+
+    
+
+    #print(ben.print_character_levels())
+    #print(ben.agility.effective_level)
+    print(ben.print_character_levels())
+    print(ben.skills['Mana Condensation'])
 
 
 
